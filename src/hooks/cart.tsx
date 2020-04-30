@@ -30,23 +30,82 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
-    }
+      const productsStoraged = await AsyncStorage.getItem(
+        '@GoMarketPlace:products',
+      );
 
+      if (productsStoraged) {
+        setProducts(JSON.parse(productsStoraged));
+      } else {
+        setProducts([]);
+      }
+    }
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  useEffect(() => {
+    async function saveStorageProducts(): Promise<void> {
+      await AsyncStorage.setItem(
+        '@GoMarketPlace:products',
+        JSON.stringify(products),
+      );
+    }
+    saveStorageProducts();
+  }, [products]);
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+  const increment = useCallback(
+    async id => {
+      const checkProductExists = products.find(product => product.id === id);
 
-  const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      if (!checkProductExists) {
+        throw new Error('Cannot increment an inexistent product');
+      }
+
+      checkProductExists.quantity += 1;
+
+      const oldProducts = products.filter(product => product.id !== id);
+
+      setProducts([...oldProducts, checkProductExists]);
+    },
+    [products],
+  );
+
+  const addToCart = useCallback(
+    async product => {
+      const checkProductInCart = products.find(
+        productFilter => productFilter.id === product.id,
+      );
+
+      const newArrayProducts = [...products, product];
+
+      if (!checkProductInCart) {
+        setProducts(newArrayProducts);
+      } else {
+        increment(checkProductInCart.id);
+      }
+    },
+    [increment, products],
+  );
+
+  const decrement = useCallback(
+    async id => {
+      const checkProductExists = products.find(product => product.id === id);
+
+      if (!checkProductExists) {
+        throw new Error('Cannot decrement an inexistent product');
+      }
+
+      const oldProducts = products.filter(product => product.id !== id);
+
+      if (checkProductExists.quantity === 1) {
+        setProducts(oldProducts);
+      } else {
+        checkProductExists.quantity -= 1;
+        setProducts([...oldProducts, checkProductExists]);
+      }
+    },
+    [products],
+  );
 
   const value = React.useMemo(
     () => ({ addToCart, increment, decrement, products }),
