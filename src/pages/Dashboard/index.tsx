@@ -26,6 +26,7 @@ interface Product {
   title: string;
   image_url: string;
   price: number;
+  quantity: number;
 }
 
 const Dashboard: React.FC = () => {
@@ -35,22 +36,16 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      try {
-        const response = await api.get('products');
+      const response = await api.get('/products');
 
-        setProducts(response.data);
-      } catch (err) {
-        console.log(err);
-      }
+      setProducts(response.data);
     }
+
     loadProducts();
   }, []);
 
   function handleAddToCart(item: Product): void {
-    addToCart({
-      ...item,
-      quantity: 1,
-    });
+    addToCart(item);
   }
 
   return (
@@ -63,7 +58,7 @@ const Dashboard: React.FC = () => {
           ListFooterComponentStyle={{
             height: 80,
           }}
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: Product }) => (
             <Product>
               <ProductImage source={{ uri: item.image_url }} />
               <ProductTitle>{item.title}</ProductTitle>
